@@ -13,12 +13,20 @@ def scrub_and_fingerprint(raw_text: str, blob_iterations: int = 120_000) -> tupl
     Redacts common PII patterns and computes a deterministic cryptographic fingerprint.
     CPU-bound (~40-60ms per invocation depending on host CPU).
     """
+    cleaned = scrub_text(raw_text)
+    return cleaned, fingerprint_text(cleaned, blob_iterations)
+
+
+def scrub_text(raw_text: str) -> str:
     cleaned = raw_text
     for pattern in PII_PATTERNS:
         cleaned = pattern.sub("[REDACTED]", cleaned)
+    return cleaned
 
-    digest = cleaned.encode("utf-8")
+
+def fingerprint_text(cleaned_text: str, blob_iterations: int = 120_000) -> str:
+    digest = cleaned_text.encode("utf-8")
     for _ in range(blob_iterations):
         digest = hashlib.sha256(digest).digest()
 
-    return cleaned, digest.hex()
+    return digest.hex()
